@@ -1,0 +1,25 @@
+Here's the plan. I'm assuming a fresh setup with email/password login, access + refresh tokens, and stateless verification — say if any of that differs.
+
+**Dependencies**
+- `jsonwebtoken` (sign/verify), `bcrypt` (password hashing), `zod` (input validation). Optional `cookie-parser` if you go the cookie route.
+
+**Config & secrets**
+- Load `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, and TTLs from env (`dotenv`); fail fast at boot if missing. Use two distinct secrets so a leaked access secret can't mint refresh tokens.
+
+**Auth flow / endpoints**
+- `POST /auth/register` → hash password (bcrypt, cost ~12), store user.
+- `POST /auth/login` → verify password, issue short-lived access token (~15m) + longer refresh token (~7d).
+- `POST /auth/refresh` → validate refresh token, issue new access token.
+- `POST /auth/logout` → invalidate refresh token.
+
+**Middleware**
+- `requireAuth`: read token from `Authorization: Bearer`, `jwt.verify`, attach `req.user`, return 401 on failure. Optional `requireRole` for authorization.
+
+**Token transport & revocation** — the two decisions that change the design:
+- *Transport*: `Authorization` header (simple, good for APIs/mobile) vs httpOnly cookie (better for browsers, but needs CSRF protection). Default: header.
+- *Revocation*: pure-stateless can't revoke access tokens early. If you need logout/ban to take effect immediately, store refresh tokens (or a token version per user) in the DB. Default: persist refresh tokens, keep access tokens stateless.
+
+**Hardening & tests**
+- Rate-limit login/refresh, generic error messages (don't leak which field was wrong), validate all input, HTTPS only. Unit-test token verify + expiry, integration-test the login→access→refresh→logout cycle.
+
+Two questions that steer the code: **(1)** browser or API/mobile client, and **(2)** do you need immediate revocation? Answer those and I'll implement.

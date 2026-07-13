@@ -1,0 +1,25 @@
+Here's my plan for JWT auth in Node/Express:
+
+**Approach & key decisions**
+- **Token strategy: short-lived access token (~15 min) + long-lived refresh token (~7 days).** Access token in the `Authorization: Bearer` header; refresh token in an httpOnly, Secure, SameSite cookie. This is the main decision — if you want simpler and can accept no revocation, a single access token works, but I'd default to the refresh pattern.
+- **Library:** `jsonwebtoken` for signing/verifying, `bcrypt` (or `argon2`) for password hashing. `HS256` with a secret from env is fine for a single service; use `RS256` (keypair) only if a separate service needs to verify tokens.
+
+**Steps**
+1. **Config & secrets** — `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, expiries in env (validated at startup); never commit them.
+2. **User model + password hashing** — store `bcrypt` hashes only; `register` and `login` handlers.
+3. **Token utilities** — `signAccess`, `signRefresh`, `verify` helpers with correct `expiresIn`, issuer/audience claims.
+4. **Auth middleware** — parse `Bearer` token, verify, attach `req.user`; return 401 on missing/expired/invalid.
+5. **Routes** — `POST /auth/register`, `POST /auth/login`, `POST /auth/refresh` (rotates refresh token), `POST /auth/logout` (invalidates it).
+6. **Refresh-token store** — persist a hash/jti of valid refresh tokens (DB or Redis) so logout and rotation can revoke them; stateless access tokens stay unrevoked until expiry by design.
+7. **Tests** — happy path, expired token, tampered token, refresh rotation, logout.
+
+**Things to get right**
+- Return generic "invalid credentials" (don't reveal which field failed); rate-limit login.
+- Keep secrets strong/rotatable; set token `exp`, `iss`, `aud` and verify them.
+- Cookies: `httpOnly` + `Secure` + `SameSite=Strict/Lax` for the refresh token.
+
+**Two questions that change the design:**
+1. Do you need **logout / token revocation**? (If yes → refresh-token store; if no → we can skip the DB/Redis piece.)
+2. **Session storage on the client** — SPA (cookies) or mobile/third-party (header + secure storage)?
+
+Want me to proceed with the refresh-token + `jsonwebtoken` default, or adjust based on those two answers?

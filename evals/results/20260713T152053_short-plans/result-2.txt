@@ -1,0 +1,17 @@
+Here's a plan. I don't have your codebase in view, so this assumes a fairly standard setup — tell me if any assumption is off.
+
+## Plan
+
+- **Deps & config**: `jsonwebtoken`, `bcrypt` (or `argon2`) for password hashing. Put `JWT_SECRET` (or an RS256 key pair), token TTLs in env — never hardcode. Fail fast at boot if the secret is missing.
+- **User store & signup/login**: hash passwords on registration; on login verify hash and issue tokens. Never log or return the hash.
+- **Token issuance**: short-lived **access token** (~15 min) + longer **refresh token** (~7 days) with a `/refresh` endpoint. Sign minimal claims (`sub`, `role`, `exp`) — no PII.
+- **Auth middleware**: verify signature + expiry, attach `req.user`, return 401 on failure. Apply it to protected routes; keep auth routes public.
+- **Refresh & revocation**: store refresh tokens server-side (DB/Redis) so logout and compromise can revoke them — plain JWTs alone can't be invalidated before expiry.
+- **Hardening**: rate-limit login/refresh, generic "invalid credentials" errors (no user enumeration), HTTPS-only, validate input.
+
+## Two decisions that change the code
+
+1. **Token transport** — `Authorization: Bearer` header (simple, good for pure APIs/mobile) vs **httpOnly cookies** (safer against XSS, but needs CSRF protection). I'd default to Bearer for an API; cookies if a browser SPA on the same site is the main client.
+2. **Signing algorithm** — **HS256** (one shared secret, simplest) vs **RS256** (private/public keypair, better if other services must verify tokens without the signing secret). I'd default to HS256 unless you have multiple services.
+
+Want me to proceed with the defaults (Bearer + HS256 + access/refresh), or adjust first? Also — what's your user store (Postgres/Prisma, Mongo, something else)? That's the one detail that meaningfully shapes the code.

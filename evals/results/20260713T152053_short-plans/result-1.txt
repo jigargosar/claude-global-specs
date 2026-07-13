@@ -1,0 +1,23 @@
+Here's my plan. Key decision points flagged inline — tell me if any default is wrong for you.
+
+## Approach
+
+- **Token model:** short-lived access JWT (~15 min) + long-lived refresh token (~7 days). *Default: refresh flow. If this is a simple internal API, I'd drop refresh tokens and just issue one access token.*
+- **Signing:** HS256 with a secret from env (`JWT_SECRET`), validated at boot so the app fails fast if it's missing. *Switch to RS256 if tokens are verified by services that shouldn't hold the signing key.*
+- **Password storage:** `bcrypt` (or `argon2`) hashing — never store or log plaintext.
+
+## Pieces to build
+
+- **Auth routes:** `POST /auth/register`, `POST /auth/login` (returns access token), `POST /auth/refresh`, `POST /auth/logout`.
+- **Middleware:** `requireAuth` — pulls the bearer token from `Authorization`, verifies signature + expiry, attaches `req.user`. Returns 401 on failure, distinct from 403 for authenticated-but-unauthorized.
+- **Refresh-token handling:** store refresh tokens server-side (DB row or Redis) so logout/revocation actually works; rotate on each refresh. *Skip if we drop refresh tokens.*
+- **Transport:** return access token in the JSON body for an API; if a browser is the client, put the refresh token in an httpOnly, Secure, SameSite cookie.
+
+## Decisions I need from you
+
+1. **Refresh tokens or single access token?** (drives ~40% of the code)
+2. **Who consumes the tokens** — only this API, or other services too? (HS256 vs RS256)
+3. **Existing user store/ORM** (Prisma, Sequelize, raw pg, Mongo…) so I match your data layer.
+4. **Client** — SPA/browser, mobile, or server-to-server? (affects cookie vs header)
+
+Answer those and I'll write it to match your stack. Want me to also cover rate-limiting on `/login` and token-payload shape (claims), or keep it to core auth for now?

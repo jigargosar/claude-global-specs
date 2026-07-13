@@ -1,0 +1,45 @@
+{
+  "run": 1,
+  "bullets": 12,
+  "short": false,
+  "model": "claude-opus-4-8[1m]",
+  "session_id": "c0e61d8a-3cde-401a-85b3-22db4df5cc9d",
+  "duration_ms": 19233,
+  "cost_usd": 0.08594750000000001
+}
+{
+  "run": 2,
+  "bullets": 10,
+  "short": false,
+  "model": "claude-opus-4-8[1m]",
+  "session_id": "ec13c223-2ae3-41a1-871e-6a1869e10bfc",
+  "duration_ms": 19805,
+  "cost_usd": 0.0933025
+}
+{
+  "run": 3,
+  "bullets": 14,
+  "short": false,
+  "model": "claude-opus-4-8[1m]",
+  "session_id": "dca749f6-0a46-4209-82d4-f96da823e45c",
+  "duration_ms": 23470,
+  "cost_usd": 0.0890425
+}
+{
+  "run": 4,
+  "bullets": 10,
+  "short": false,
+  "model": "claude-opus-4-8[1m]",
+  "session_id": "a79abd8f-d8e6-4a63-b224-b3d3e8985f86",
+  "duration_ms": 19280,
+  "cost_usd": 0.08660249999999999
+}
+{
+  "run": 5,
+  "bullets": 9,
+  "short": false,
+  "model": "claude-opus-4-8[1m]",
+  "session_id": "096ea18e-20ea-4112-a3c1-32ee8cdbcb41",
+  "duration_ms": 19179,
+  "cost_usd": 0.0902725
+}

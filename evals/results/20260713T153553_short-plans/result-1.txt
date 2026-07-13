@@ -1,0 +1,21 @@
+## JWT Auth Plan
+
+**Key decisions (flag these first):**
+- **Access + refresh token split** — short-lived access JWT (~15 min), long-lived refresh token (~7 days). Avoids long-lived access tokens that can't be revoked.
+- **Refresh token storage** — httpOnly, Secure, SameSite cookie (not localStorage; prevents XSS token theft). Access token in memory or Authorization header.
+- **Signing** — HS256 with a strong secret from env for a single service; RS256 if other services must verify without the secret.
+
+**Steps:**
+1. **Deps & config** — `jsonwebtoken`, `bcrypt`; load `JWT_ACCESS_SECRET`, `JWT_REFRESH_SECRET`, expiries from env (fail-fast if missing).
+2. **User model + password hashing** — bcrypt (cost ≥12) on register; never store plaintext.
+3. **Auth routes** — `POST /register`, `POST /login` (issue both tokens), `POST /refresh` (rotate refresh, issue new access), `POST /logout` (invalidate refresh).
+4. **`authenticate` middleware** — verify access token, attach `req.user`, return 401 on invalid/expired.
+5. **Refresh-token revocation** — persist refresh tokens (or a jti allowlist/denylist) in DB/Redis so logout and rotation actually revoke; detect reuse.
+6. **Guards & errors** — optional role/permission middleware; consistent 401 vs 403; rate-limit login/refresh.
+7. **Tests** — login success/failure, expired token, refresh rotation, reuse detection, protected-route access.
+
+**Two things that change the plan — tell me:**
+- Sessions per user across devices, and do you need server-side logout/revocation? (Decides whether refresh tokens hit a store or stay stateless.)
+- What's the client — browser (cookies) or mobile/service-to-service (header)? (Decides token transport.)
+
+Want me to proceed with the sensible defaults above (access+refresh, cookie for browser, Redis-backed refresh revocation), or adjust first?

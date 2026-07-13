@@ -1,0 +1,1 @@
+I want to add JWT authentication to a Node/Express API. Before writing any code, give me your implementation plan.
